@@ -7,6 +7,7 @@ export default function App() {
   return (
     <>
       <StatusBar
+      // test upload
         barStyle="light-content"
         backgroundColor="#191919"
       />
