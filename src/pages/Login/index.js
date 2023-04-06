@@ -79,7 +79,7 @@ export default function App() {
               width: logo.x,
               height: logo.y
             }}
-            source={require('../../assets/logo.png')}
+            source={require('../../assets/Test.png')}
           />
         </View>
 
