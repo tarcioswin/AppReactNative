@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import * as SQLite from 'expo-sqlite';
+
 import
   {
     KeyboardAvoidingView,
@@ -79,7 +81,7 @@ export default function App() {
               width: logo.x,
               height: logo.y
             }}
-            source={require('../../assets/Test.png')}
+            source={require('../../assets/logoboi.png')}
           />
         </View>
 
