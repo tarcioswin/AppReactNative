@@ -1,133 +1,136 @@
 import React, { useState, useEffect } from 'react';
+import { View, TextInput, Button, Alert, Animated, StyleSheet, Image, TouchableHighlight, Text } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
-import
-  {
-    KeyboardAvoidingView,
-    View,
-    Text,
-    Image,
-    TextInput,
-    TouchableOpacity,
-    Animated,
-    Keyboard
-  } from 'react-native';
+const db = SQLite.openDatabase('mydb.db');
 
-import styles from './styles';
+db.transaction(tx => {
+  tx.executeSql('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, password TEXT)');
+});
 
-export default function App() {
-  const [offset] = useState(new Animated.ValueXY({ x: 0, y: 80 }));
-  const [opacity] = useState(new Animated.Value(0));
-  const [logo] = useState(new Animated.ValueXY({ x: 170, y: 195 }));
+const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    keyboardDidShowListener
-      = Keyboard.addListener('keyboardDidShow', keyboardDidShow);
+  const handleLogin = () => {
 
-    keyboardDidHideListener
-      = Keyboard.addListener('keyboardDidHide', keyboardDidHide);
+    /*try{}
 
-    // Animações em paralelo
-    Animated.parallel([
-      // Fornece um modelo de física básico (efeito mola/estilingue)
-      Animated.spring(offset.y, {
-        toValue: 0,
-        speed: 4,
-        bounciness: 20
-      }),
-
-      // Anima um valor ao longo do tempo
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 200
-      })
-    ]).start();
-  }, []);
-
-  function keyboardDidShow() {
-    Animated.parallel([
-      Animated.timing(logo.x, {
-        toValue: 95,
-        duration: 100
-      }),
-
-      Animated.timing(logo.y, {
-        toValue: 105,
-        duration: 100
-      })
-    ]).start();
-  }
-
-  function keyboardDidHide() {
-    Animated.parallel([
-      Animated.timing(logo.x, {
-        toValue: 170,
-        duration: 100
-      }),
-
-      Animated.timing(logo.y, {
-        toValue: 195,
-        duration: 100
-      })
-    ]).start();
+    catch(Exception){
+      
+    }*/
+    db.transaction(tx => {
+      tx.executeSql(
+        'SELECT * FROM users WHERE email = ? AND password = ?',
+        [email, password],
+        (_, { rows: { _array } }) => {
+          if (_array.length > 0) {
+            console.log('Login successful');
+          } else {
+            Alert.alert('Error', 'Invalid email or password');
+          }
+        }
+      );
+    });
   };
 
+  //tela de cadastro
+  const handleCadastrar = () => {
+
+  };
+
+  const Logo = () => {
+    return (
+      <Image
+        style={styles.logo}
+        source={require('../../assets/logoboi.png')}
+      />
+    );
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: 'black',// cor de fundo
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingBottom: 40,
+    },
+
+    buttonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 20,
+      marginHorizontal: 10,
+
+    },
+
+    button: {
+      backgroundColor: '#00BFFF',
+      padding: 10,
+      borderRadius: 20,
+      marginHorizontal: 10,
+      marginTop: 10, // distância entre os botões
+    },
+
+    buttonText: {
+      color: 'black',
+      fontSize: 24,
+      fontWeight: 'bold',
+    },
+
+    textBotao:
+    {
+      marginTop: 10, // distância entre os botões
+      backgroundColor: 'white'
+    },
+
+    logo: {
+      width: 100,
+      height: 100,
+      borderRadius: 20,
+    },
+  });
+
   return (
-    <>
-      <KeyboardAvoidingView style={styles.container}>
-        <View style={styles.containerLogo}>
-          <Animated.Image
-            style={{
-              width: logo.x,
-              height: logo.y
-            }}
-            source={require('../../assets/logoboi.png')}
-          />
-        </View>
+    <View style={styles.container}>
+      <Animated.Image
+        style={{
+          width: 200,
+          height: 190,
+          marginBottom: 100,
+          borderRadius: 50,
+        }}
+        source={require('../../assets/logoboi.png')}
+      />
+      <TextInput style={styles.textBotao}
+        placeholder="Email"
+        textContentType="emailAddress"
+        autoCapitalize="none"
+        autoCompleteType="email"
+        autoCorrect={false}
+        onChangeText={setEmail}
+        // style={{ backgroundColor: 'white' }}
+        value={email}
 
-        <Animated.View style={[
-          styles.form,
-          {
-            opacity: opacity,
-            transform: [
-              {
-                translateY: offset.y
-              }
-            ]
-          }
-        ]}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            autoCapitalize="none"
-            autoCompleteType="email"
-            autoCorrect={false}
-            onChangeText={() => {}}
-          />
+      />
+      <TextInput style={styles.textBotao}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+      // style={{ backgroundColor: 'white' }}
 
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            //keyboardType="visible-password"
-            textContentType="password"
-            autoCapitalize="none"
-            autoCompleteType="password"
-            autoCorrect={false}
-            secureTextEntry={true}
-            onChangeText={() => {}}
-          />
+      />
+      <TouchableHighlight style={styles.button} onPress={handleLogin} underlayColor="#00529b">
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableHighlight>
 
-          <TouchableOpacity style={styles.buttonSubmit}>
-            <Text style={styles.submitText}>Acessar</Text>
-          </TouchableOpacity>
+      <TouchableHighlight style={styles.button} onPress={handleCadastrar} underlayColor="#00529b">
+        <Text style={styles.buttonText}>Cadastra-se</Text>
+      </TouchableHighlight>
 
-          <TouchableOpacity style={styles.buttonRegister}>
-            <Text style={styles.registerText}>Criar conta gratuita</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </KeyboardAvoidingView>
-    </>
+    </View>
   );
 };
+
+export default Login;
