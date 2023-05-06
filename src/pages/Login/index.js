@@ -2,26 +2,51 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, Alert, Animated, StyleSheet, Image, TouchableHighlight, Text } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
+
 const db = SQLite.openDatabase('mydb.db');
+SQLite.openDatabase();
 
 db.transaction(tx => {
-  tx.executeSql('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, password TEXT)');
+  tx.executeSql('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, password TEXT)');
 });
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const handleLogin3 = () => {
+    db.transaction(
+      tx => {
+        tx.executeSql(
+          'SELECT * FROM users WHERE email = ? AND password = ?',
+          [email, password],
+          (_, { rows: { _array } }) => {
+            if (_array.length > 0) {
+              console.log('Login successful');
+            } else {
+              Alert.alert('Error', 'Invalid email or password');
+            }
+          }
+        );
+      },
+      error => {
+        console.error(error);
+        Alert.alert('Error', 'Failed to execute database operation');
+      }
+    );
+  };
+
   const handleLogin = () => {
+    SQLite.openDatabase();
+    const myArray = undefined;
+    const arrayLength = myArray ? myArray.length : 0;
+    console.log(arrayLength); // 0
 
-    /*try{}
 
-    catch(Exception){
-      
-    }*/
+
     db.transaction(tx => {
       tx.executeSql(
-        'SELECT * FROM users WHERE email = ? AND password = ?',
+        'SELECT * FROM usuarios WHERE email = ? AND password = ?',
         [email, password],
         (_, { rows: { _array } }) => {
           if (_array.length > 0) {
@@ -34,8 +59,64 @@ const Login = () => {
     });
   };
 
+  /*
+  const handleInsert = () => {
+    db.transaction(tx => {
+      tx.executeSql(
+        'INSERT INTO users (email, password) VALUES (?, ?)',
+        [email, password],
+        (_, { rowsAffected }) => {
+          if (rowsAffected > 0) {
+            console.log('User inserted successfully');
+          } else {
+            console.log('Insertion failed');
+          }
+        }
+      );
+    });
+  };
+
+*/
   //tela de cadastro
   const handleCadastrar = () => {
+    SQLite.openDatabase();
+    db.transaction(tx => {
+      tx.executeSql(
+        'INSERT INTO usuarios (email, password) VALUES (?, ?)',
+        //['breno2321@test.com', 'caralho'],
+        [email, password],
+        (_, { rowsAffected }) => {
+          console.log(`${rowsAffected} row(s) inserted`);
+        },
+        (_, error) => {
+          console.log(`Insert error: ${error}`);
+        }
+      );
+    });
+
+  };
+  //Retornar os valores do banco de de Dados
+  const handleSelecionarBase = () => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        'SELECT email, password FROM usuarios',
+        [],
+        (tx, results) => {
+          const { rows } = results;
+          const len = rows.length;
+          for (let i = 0; i < len; i++) {
+            const { email, password } = rows.item(i);
+            console.log(`Email: ${email}, Password: ${password}`);
+          }
+        },
+        (error) => {
+          console.log('SELECT error: ', error);
+        }
+      );
+    });
+
+
+
 
   };
 
@@ -125,8 +206,12 @@ const Login = () => {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableHighlight>
 
+
       <TouchableHighlight style={styles.button} onPress={handleCadastrar} underlayColor="#00529b">
         <Text style={styles.buttonText}>Cadastra-se</Text>
+      </TouchableHighlight>
+      <TouchableHighlight style={styles.button} onPress={handleSelecionarBase} underlayColor="#00529b">
+        <Text style={styles.buttonText}>EncontrarDados</Text>
       </TouchableHighlight>
 
     </View>
