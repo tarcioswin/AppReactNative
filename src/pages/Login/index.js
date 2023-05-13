@@ -2,39 +2,44 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, Alert, Animated, StyleSheet, Image, TouchableHighlight, Text } from 'react-native';
 import * as SQLite from 'expo-sqlite';
 
+//        source={require('../../assets/logoboi.png')}
 
-const db = SQLite.openDatabase('mydb.db');
+//const db = SQLite.openDatabase('mydb.db');
+//const db = SQLite.openDatabase('../../dataBase/boiDataBasedb.db');
+const db = SQLite.openDatabase('../../dataBase/boiDataBasedb.db');
 SQLite.openDatabase();
 
 db.transaction(tx => {
-  tx.executeSql('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, password TEXT)');
+  // tx.executeSql('CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT, password TEXT)');
+  tx.executeSql('CREATE TABLE IF NOT EXISTS  usuarios ( id integer PRIMARY KEY AUTOINCREMENT,    nome varchar,    endereco varchar,   numero integer, email varchar, login varchar, senha varchar, data_acesso datetime, data_criacao datetime, trocar_senha datetime, numero_telefone integer, numero_fixo integer, estado varchar, data_bloqueio datetime, logado_sistema numeric) CREATE TABLE IF NOT EXISTS dados_Ia (id integer PRIMARY KEY AUTOINCREMENT,dados_IA float,id_usuarios float) IF NOT EXISTS  CREATE TABLE produtos ( id integer PRIMARY KEY AUTOINCREMENT, nome varchar, tipo varchar, estado varchar, preco float, id_usuarios integer, imagem blob) CREATE TABLE IF NOT EXISTS  dados_Log (id integer PRIMARY KEY AUTOINCREMENT,dados_acesso datetime,   id_usuarios integer)')
+
 });
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  const handleLogin3 = () => {
-    db.transaction(
-      tx => {
-        tx.executeSql(
-          'SELECT * FROM users WHERE email = ? AND password = ?',
-          [email, password],
-          (_, { rows: { _array } }) => {
-            if (_array.length > 0) {
-              console.log('Login successful');
-            } else {
-              Alert.alert('Error', 'Invalid email or password');
+  /*
+    const handleLogin3 = () => {
+      db.transaction(
+        tx => {
+          tx.executeSql(
+            'SELECT * FROM users WHERE email = ? AND password = ?',
+            [email, password],
+            (_, { rows: { _array } }) => {
+              if (_array.length > 0) {
+                console.log('Login successful');
+              } else {
+                Alert.alert('Error', 'Invalid email or password');
+              }
             }
-          }
-        );
-      },
-      error => {
-        console.error(error);
-        Alert.alert('Error', 'Failed to execute database operation');
-      }
-    );
-  };
+          );
+        },
+        error => {
+          console.error(error);
+          Alert.alert('Error', 'Failed to execute database operation');
+        }
+      );
+    };*/
 
   const handleLogin = () => {
     SQLite.openDatabase();

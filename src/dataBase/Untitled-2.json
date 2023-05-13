@@ -1,0 +1,7 @@
+[
+    {
+        "stmt": "select * from usuarios;",
+        "header": [],
+        "rows": []
+    }
+]
