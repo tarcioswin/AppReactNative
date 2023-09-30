@@ -1,53 +1,89 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import COLORS from '../../components/colors';
-
+import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../services/firebaseConfig';
 import { getAuth, updatePassword, updateEmail } from 'firebase/auth';
-import { doc, setDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 
 const EditInformation = ({ navigation }) => {
   const [isPasswordShown, setIsPasswordShown] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [name, setName] = useState('');
   const [telefone, setTelefone] = useState('');
   const [ddd, setDdd] = useState('');
 
+  useEffect(() => {
+    // Fetch the user's current information when the component mounts
+    const fetchUserData = async () => {
+      try {
+        const user = auth.currentUser;
+
+        // Fetch the user's document from Firestore
+        const db = getFirestore();
+        const userDocRef = doc(db, "usuario", user.uid);
+        const userDocSnapshot = await getDoc(userDocRef);
+
+        if (userDocSnapshot.exists()) {
+          const userData = userDocSnapshot.data();
+          setEmail(userData.email || '');
+          setName(userData.nome || '');
+
+          // If the telephone field is stored as "+55XXXXXXXXX", split it to DDD and telephone number
+          if (userData.telefone && userData.telefone.startsWith('+55')) {
+            const telefoneParts = userData.telefone.slice(3).match(/(\d{2})(\d{8,9})/);
+            if (telefoneParts) {
+              setDdd(telefoneParts[1]);
+              setTelefone(telefoneParts[2]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   const handleUpdateInformation = async () => {
-    // Here, you can add your code to update the user information in Firebase Firestore
-    // Example code for updating user information
     try {
       const user = auth.currentUser;
-      const auth = getAuth();
 
-      // Update user's email if the email input is not empty
-      if (email) {
-        await updateEmail(user, email);
+      // Check if all mandatory fields are filled
+      if (!email || !password || !name || !ddd || !telefone) {
+        Alert.alert('Incomplete Information', 'Please fill in all mandatory fields.');
+        return;
       }
 
-      // Update user's password if the password input is not empty
-      if (password) {
-        await updatePassword(user, password);
+      // Check if passwords match
+      if (password !== passwordConfirmation) {
+        Alert.alert('Password Mismatch', 'Passwords do not match.');
+        return;
       }
 
-      // Update other user information in Firestore or your data store
-      const db = collection(db, 'users'); // Replace 'users' with your Firestore collection name
-      const userDoc = doc(db, user.uid);
+      // Update user's email
+      await updateEmail(user, email);
 
-      // You can update other fields like 'name', 'telefone', 'ddd', etc.
-      await setDoc(userDoc, {
-        name: name,
-        telefone: telefone,
-        ddd: ddd,
-      });
+      // Update user's password
+      await updatePassword(user, password);
 
-      // Show a success message
-      Alert.alert('User Information Updated', 'Your information has been updated successfully.');
+      // Initialize Firestore
+      const db = getFirestore();
+      const userDoc = doc(db, "usuario", user.uid);
+
+      // Update user's information
+      await setDoc(userDoc, { 
+        email: email, 
+        nome: name,
+         telefone: `+55${ddd}${telefone}` });
+
+      Alert.alert('Information Updated', 'Your information has been updated successfully.',
+      [{ text: 'OK', onPress: () => navigation.navigate('acesso') }]);
     } catch (error) {
-      // Handle errors, such as invalid email or password
       Alert.alert('Update Error', 'An error occurred while updating your information. Please try again.');
     }
   };
@@ -55,74 +91,90 @@ const EditInformation = ({ navigation }) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
       <View style={{ flex: 1, marginHorizontal: 16 }}>
-        {/* Rest of your UI components and form fields */}
         <TextInput
           placeholder="Email"
           placeholderTextColor={COLORS.black}
           keyboardType="email-address"
           style={styles.input}
           onChangeText={(text) => setEmail(text)}
+          value={email} // Set the initial value
         />
 
         <TextInput
-          placeholder="name"
+          placeholder="Name"
           placeholderTextColor={COLORS.black}
-          secureTextEntry={!isPasswordShown}
           style={styles.input}
           onChangeText={(text) => setName(text)}
-        />
-        
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor={COLORS.black}
-          secureTextEntry={!isPasswordShown}
-          style={styles.input}
-          onChangeText={(text) => setPassword(text)}
+          value={name} // Set the initial value
         />
 
-<View style={{
-                        width: "95%",
-                        alignSelf: "center", 
-                        height: 48,
-                        borderColor: COLORS.black,
-                        borderWidth: 1,
-                        borderRadius: 8,
-                        alignItems: "center",
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        paddingLeft: 20
-                    }}>
+        
+<View style={styles.inputContainer}>
           <TextInput
             placeholder="DDD"
             placeholderTextColor={COLORS.black}
             keyboardType="numeric"
-            style={{
-                width: "12%",
-                borderRightWidth: 1,
-                borderLeftColor: COLORS.grey,
-                height: "100%"
-            }}
+            style={[styles.dddInput, { color: COLORS.black }]}
             onChangeText={(text) => setDdd(text)}
+            value={ddd} // Set the initial value
           />
           <TextInput
-            placeholder="Entre com seu número"
+            placeholder="Enter your number"
             placeholderTextColor={COLORS.black}
             keyboardType="numeric"
-            style={{width: "90%" }}
+            style={[styles.telefoneInput, { color: COLORS.black }]}
             onChangeText={(text) => setTelefone(text)}
+            value={telefone} // Set the initial value
           />
         </View>
 
-        {/* Add more input fields for 'name', 'telefone', 'ddd', etc. */}
+        <View style={styles.passwordInputContainer}>
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor={COLORS.black}
+            secureTextEntry={!isPasswordShown}
+            style={[styles.passwordInput, { color: COLORS.black }]}
+            onChangeText={(text) => setPassword(text)}
+            value={password} // Set the initial value
+          />
+          <TouchableOpacity
+            onPress={() => setIsPasswordShown(!isPasswordShown)}
+            style={styles.passwordVisibilityIcon}
+          >
+            {isPasswordShown ? (
+              <Ionicons name="eye" size={24} color={COLORS.black} />
+            ) : (
+              <Ionicons name="eye-off" size={24} color={COLORS.black} />
+            )}
+          </TouchableOpacity>
+        </View>
+
+
+      <View style={styles.passwordInputContainer}>
+         <TextInput
+          placeholder="Confirm Password"
+          placeholderTextColor={COLORS.black}
+          secureTextEntry={!isPasswordShown}
+          style={[styles.passwordInput, { color: COLORS.black }]}
+          onChangeText={(text) => setPasswordConfirmation(text)}
+          value={passwordConfirmation} // Set the initial value
+         />
+       </View>
+
+
 
         <TouchableOpacity style={styles.updateButton} onPress={handleUpdateInformation}>
           <Text style={styles.updateButtonText}>Update Information</Text>
         </TouchableOpacity>
-
-        {/* Rest of your UI components */}
       </View>
     </SafeAreaView>
   );
+};
+
+const COLORS = {
+  white: '#FFFFFF',
+  black: '#000000',
+  primary: '#007BFF',
 };
 
 const styles = StyleSheet.create({
@@ -135,9 +187,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 16,
   },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    height: 48,
+    borderColor: COLORS.black,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  passwordInput: {
+    flex: 1,
+  },
+  passwordVisibilityIcon: {
+    marginRight: 8,
+  },
+  dddInput: {
+    width: '20%',
+    height: 48,
+    borderColor: COLORS.black,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+  },
+  telefoneInput: {
+    width: '80%',
+    height: 48,
+    borderColor: COLORS.black,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+  },
   inputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    width: '100%',
     marginBottom: 16,
   },
   updateButton: {
@@ -147,12 +232,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 16,
   },
   updateButtonText: {
     color: COLORS.white,
     fontSize: 18,
     fontWeight: 'bold',
-    paddingVertical:10,
+    paddingVertical: 10,
   },
 });
 

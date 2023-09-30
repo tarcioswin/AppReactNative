@@ -88,9 +88,9 @@ const Registrar = ({ navigation }) => {
 
       const fullPhoneNumber = `+55${ddd}${telefone}`;
 
-      await addDoc(collection(db, "usuario"), {
+      await setDoc(doc(db, "usuario", user.uid), {
         nome: name,
-        email:email,
+        email: email,
         telefone: fullPhoneNumber,
       });
   
