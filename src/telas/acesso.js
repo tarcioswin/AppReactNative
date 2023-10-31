@@ -7,6 +7,7 @@ import Boi from '../../assets/logoboi.png';
 import axios from 'axios';
 import { LineChart } from 'react-native-svg-charts';
 import * as shape from 'd3-shape';
+import { deprecatedPropTypes as PropTypes } from 'deprecated-react-native-prop-types';
 
 const Acesso = ({ navigation }) => {
   const [backgroundColor, setBackgroundColor] = useState(COLORS.white);
