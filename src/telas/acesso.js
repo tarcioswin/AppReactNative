@@ -86,15 +86,18 @@ const Acesso = ({ navigation }) => {
       <View style={{ flex: 1 }}>
         <Image source={Boi} style={[styles.boiImage, { width: boiContentImageWidth, height: boiContentImageWidth }]} />
         <Text style={styles.titleText}>Cotação do Boi</Text>
-        <Text>(IBM) {selectedInfo} stock quote: {dollarPrice || 'Loading...'}</Text>
+        <Text style={styles.centeredText}>
+          (IBM) {selectedInfo.split('. ')[1]} stock quote: {dollarPrice || 'Loading...'}
+        </Text>
 
 
-<View style={styles.dropdownContainer}>
+        <View style={styles.dropdownContainer}>
   <ModalDropdown
     options={['Select an item', ...infoOptions]}
     defaultValue="Select an item"
     textStyle={styles.dropdownText}
     dropdownTextStyle={styles.dropdownItemText}
+    initialScrollIndex={0} /* Set the initial scroll index to 0 */
     onSelect={(index, value) => {
       if (index === 0) {
         // Handle the case where the user selects the placeholder
@@ -105,6 +108,8 @@ const Acesso = ({ navigation }) => {
     }}
   />
 </View>
+
+
 
 
         <View
@@ -142,6 +147,13 @@ const Acesso = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  centeredText: {
+    textAlign: 'center', // Horizontally center the text
+    alignSelf: 'center', // Center the text within its container
+    fontSize: 16,
+    fontWeight: 'bold',
+    // Add any other styles you need
+  },
   dropdownView: {
     width: 130, // Adjust the width as needed
     borderWidth: 1,
