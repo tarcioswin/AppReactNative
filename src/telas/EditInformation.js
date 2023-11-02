@@ -130,7 +130,7 @@ const EditInformation = ({ navigation }) => {
 
         <View style={styles.passwordInputContainer}>
           <TextInput
-            placeholder="Password"
+            placeholder="New Password"
             placeholderTextColor={COLORS.black}
             secureTextEntry={!isPasswordShown}
             style={[styles.passwordInput, { color: COLORS.black }]}
@@ -152,7 +152,7 @@ const EditInformation = ({ navigation }) => {
 
       <View style={styles.passwordInputContainer}>
          <TextInput
-          placeholder="Confirm Password"
+          placeholder="Confirm the New Password"
           placeholderTextColor={COLORS.black}
           secureTextEntry={!isPasswordShown}
           style={[styles.passwordInput, { color: COLORS.black }]}

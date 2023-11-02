@@ -5,9 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../components/colors';
 import Boi from '../../assets/logoboi.png';
 import axios from 'axios';
-import { LineChart } from 'react-native-svg-charts';
+import { LineChart, Grid } from 'react-native-svg-charts'
 import * as shape from 'd3-shape';
-import DropDownPicker from 'react-native-dropdown-picker';
 import ModalDropdown from 'react-native-modal-dropdown';
 
 const Acesso = ({ navigation }) => {
@@ -87,21 +86,20 @@ const Acesso = ({ navigation }) => {
         <Image source={Boi} style={[styles.boiImage, { width: boiContentImageWidth, height: boiContentImageWidth }]} />
         <Text style={styles.titleText}>Cotação do Boi</Text>
         <Text style={styles.centeredText}>
-          (IBM) {selectedInfo.split('. ')[1]} stock quote: {dollarPrice || 'Loading...'}
+          (IBM) {selectedInfo.split('. ')[1]} stock quote last day: {dollarPrice}
         </Text>
 
 
-        <View style={styles.dropdownContainer}>
+  <View style={styles.dropdownContainer}>
   <ModalDropdown
     options={['Select an item', ...infoOptions]}
     defaultValue="Select an item"
     textStyle={styles.dropdownText}
     dropdownTextStyle={styles.dropdownItemText}
-    initialScrollIndex={0} /* Set the initial scroll index to 0 */
+    initialScrollIndex={1} // Ensure this index is within the range of your list items
     onSelect={(index, value) => {
       if (index === 0) {
-        // Handle the case where the user selects the placeholder
-        setSelectedInfo(null); // You can set it to null or some other value
+        setSelectedInfo(null);
       } else {
         setSelectedInfo(value);
       }
@@ -129,22 +127,33 @@ const Acesso = ({ navigation }) => {
 
 
 
-        {/* Line chart (displayed when showGraph is true) */}
+      {/* Line chart (displayed when showGraph is true) */}
         {showGraph && (
           <LineChart
-            style={{ flex: 1 }}
+            style={{ flex: 2, marginVertical: 55, borderRadius: 8, borderWidth: 2, borderColor: 'rgba(255, 0, 0, 0.2)' }}
             data={chartData}
             contentInset={{ top: 20, bottom: 20 }}
-            svg={{ stroke: 'rgb(255, 0, 0)' }}
+            svg={{
+              stroke: 'rgb(255, 0, 0)', // Line color (red)
+              strokeWidth: 2, // Line width
+              strokeOpacity: 0.7, // Line opacity (0 to 1)
+              fill: 'rgba(255, 0, 0, 0.2)', // Area under the line color
+              fillOpacity: 1, // Area under the line opacity (0 to 1)
+            }}
             curve={shape.curveBasis}
             yMin={0}
             yMax={Math.max(...chartData) + 10}
-          />
+          >
+            <Grid />
+          </LineChart>
         )}
       </View>
     </SafeAreaView>
   );
 };
+
+
+
 
 const styles = StyleSheet.create({
   centeredText: {
@@ -222,3 +231,8 @@ const styles = StyleSheet.create({
 });
 
 export default Acesso;
+
+
+
+
+
