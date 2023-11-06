@@ -1,31 +1,25 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
-import { View, Text, Image, Dimensions, StyleSheet, TouchableOpacity, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../components/colors';
-import Boi from '../../assets/logoboi.png';
 import axios from 'axios';
-import { StackedAreaChart, Grid, YAxis, XAxis, AreaChart, LineChart } from 'react-native-svg-charts';
+import { Grid, YAxis, XAxis, LineChart } from 'react-native-svg-charts';
 import * as shape from 'd3-shape';
 import * as scale from 'd3-scale';
 import ModalDropdown from 'react-native-modal-dropdown';
 import moment from 'moment';
 
+
+
 const Acesso = ({ navigation }) => {
   const [backgroundColor, setBackgroundColor] = useState(COLORS.white);
-  const [boiHeaderImageWidth, setBoiHeaderImageWidth] = useState(30);
-  const [boiContentImageWidth, setBoiContentImageWidth] = useState(100);
-  const [dollarPrice, setDollarPrice] = useState('');
+  const [Price, setPrice] = useState('');
   const [chartData, setChartData] = useState([]);
   const [selectedInfo, setSelectedInfo] = useState('close'); // Default selected option
   const [infoOptions] = useState(['1. open', '2. high', '3. low', '4. close', '5. volume']);
   const [showGraph, setShowGraph] = useState(false);
 
-  useLayoutEffect(() => {
-    const windowWidth = Dimensions.get('window').width;
-    const headerImageWidth = 200;
-    setBoiHeaderImageWidth(headerImageWidth);
-  }, []);
 
   useEffect(() => {
     navigation.setOptions({
@@ -76,7 +70,7 @@ const Acesso = ({ navigation }) => {
 
         const latestData = Object.values(timeSeries)[0];
         const latestDollarPrice = parseFloat(latestData[selectedInfo]);
-        setDollarPrice(latestDollarPrice);
+        setPrice(latestDollarPrice);
         setShowGraph(true); // Show the graph after fetching data
       }
     } catch (error) {
@@ -91,14 +85,12 @@ const Acesso = ({ navigation }) => {
   const yMax = Math.max(...yValues);
 
 
-
-
   return (
 
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
       <View style={{ flex: 1 }}>
         <Text style={styles.centeredText}>
-          (IBM) {selectedInfo.split('. ')[1]} stock quote last day: {dollarPrice}
+          (IBM) {selectedInfo.split('. ')[1]} stock quote last day: {Price}
         </Text>
 
 
@@ -174,7 +166,7 @@ const Acesso = ({ navigation }) => {
                 style={{ height: 80, marginHorizontal: -100 }}
                 data={chartData}
                 formatLabel={(value, index) => moment(chartData[index].date).format('DD/MM')}
-                contentInset={{ left: 100, right: 110}} // Increased insets
+                contentInset={{ left: 100, right: 110 }} // Increased insets
                 svg={{
                   fontSize: 14,
                   fill: 'black',
