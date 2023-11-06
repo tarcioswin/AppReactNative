@@ -12,6 +12,7 @@ import moment from 'moment';
 
 
 
+
 const Acesso = ({ navigation }) => {
   const [backgroundColor, setBackgroundColor] = useState(COLORS.white);
   const [Price, setPrice] = useState('');
@@ -165,18 +166,19 @@ const Acesso = ({ navigation }) => {
               <XAxis
                 style={{ height: 80, marginHorizontal: -100 }}
                 data={chartData}
-                formatLabel={(value, index) => moment(chartData[index].date).format('DD/MM')}
-                contentInset={{ left: 100, right: 110 }} // Increased insets
+                xAccessor={({ item }) => new Date(item.date)}
+                formatLabel={value => moment(value).format('DD MMM')}
+                contentInset={{ left: 100, right: 110 }}
                 svg={{
                   fontSize: 14,
                   fill: 'black',
                   fontWeight: 'bold',
                   rotation: 90,
                   originY: 35,
-                  y: 1, // Potentially increase this if labels are still cut off
+                  y: 1,
                 }}
                 scale={scale.scaleTime}
-                numberOfTicks={6}
+                numberOfTicks={10}
               />
 
             </View>
