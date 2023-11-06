@@ -5,9 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../components/colors';
 import Boi from '../../assets/logoboi.png';
 import axios from 'axios';
-import { LineChart, Grid } from 'react-native-svg-charts'
+import { StackedAreaChart, Grid, YAxis, XAxis, AreaChart, LineChart } from 'react-native-svg-charts';
 import * as shape from 'd3-shape';
+import * as scale from 'd3-scale';
 import ModalDropdown from 'react-native-modal-dropdown';
+import moment from 'moment';
 
 const Acesso = ({ navigation }) => {
   const [backgroundColor, setBackgroundColor] = useState(COLORS.white);
@@ -27,12 +29,6 @@ const Acesso = ({ navigation }) => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: () => (
-        <View style={styles.headerTitleContainer}>
-          <Image source={Boi} style={[styles.boiImage, { width: boiHeaderImageWidth, height: boiHeaderImageWidth }]} />
-          <Text style={styles.headerTitle}>Cotação do Boi</Text>
-        </View>
-      ),
       headerTintColor: 'black',
       headerStyle: { backgroundColor: backgroundColor },
       headerTitleStyle: { fontWeight: 'bold' },
@@ -55,20 +51,28 @@ const Acesso = ({ navigation }) => {
     });
   }, [backgroundColor]);
 
+
+
+
+
   const fetchData = async () => {
     try {
       const url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IBM&apikey=demo';
       const response = await axios.get(url);
       const timeSeries = response.data['Time Series (Daily)'];
-      
+
       if (timeSeries) {
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14); // Set the date to 2 weeks in the past
+
         const chartDataArray = [];
-        Object.keys(timeSeries).forEach((date) => {
-          const dataPoint = timeSeries[date];
-          const selectedValue = parseFloat(dataPoint[selectedInfo]);
-          chartDataArray.push(selectedValue);
-        });
-        setChartData(chartDataArray);
+        Object.entries(timeSeries)
+          .filter(([date, _]) => new Date(date) >= twoWeeksAgo) // Filter out dates that are more than 2 weeks old
+          .forEach(([date, dataPoint]) => {
+            const selectedValue = parseFloat(dataPoint[selectedInfo]);
+            chartDataArray.push({ date, value: selectedValue });
+          });
+        setChartData(chartDataArray.reverse()); // The API returns dates in descending order, so we reverse it for the chart
 
         const latestData = Object.values(timeSeries)[0];
         const latestDollarPrice = parseFloat(latestData[selectedInfo]);
@@ -80,77 +84,119 @@ const Acesso = ({ navigation }) => {
     }
   };
 
+
+
+  const yValues = chartData.map((item) => item.value);
+  const yMin = Math.min(...yValues);
+  const yMax = Math.max(...yValues);
+
+
+
+
   return (
+
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
       <View style={{ flex: 1 }}>
-        <Image source={Boi} style={[styles.boiImage, { width: boiContentImageWidth, height: boiContentImageWidth }]} />
-        <Text style={styles.titleText}>Cotação do Boi</Text>
         <Text style={styles.centeredText}>
           (IBM) {selectedInfo.split('. ')[1]} stock quote last day: {dollarPrice}
         </Text>
 
 
-  <View style={styles.dropdownContainer}>
-  <ModalDropdown
-    options={['Select an item', ...infoOptions]}
-    defaultValue="Select an item"
-    textStyle={styles.dropdownText}
-    dropdownTextStyle={styles.dropdownItemText}
-    initialScrollIndex={1} // Ensure this index is within the range of your list items
-    onSelect={(index, value) => {
-      if (index === 0) {
-        setSelectedInfo(null);
-      } else {
-        setSelectedInfo(value);
-      }
-    }}
-  />
-</View>
 
 
+        <View style={styles.dropdownContainer}>
+          <ModalDropdown
+            options={['Select an item', ...infoOptions]}
+            defaultValue="Select an item"
+            textStyle={styles.dropdownText}
+            dropdownTextStyle={styles.dropdownItemText}
+            initialScrollIndex={1} // Ensure this index is within the range of your list items
+            onSelect={(index, value) => {
+              if (index === 0) {
+                setSelectedInfo(null);
+              } else {
+                setSelectedInfo(value);
+              }
+            }}
+          />
+        </View>
 
 
         <View
           style={{
-            marginTop: 10,
-            marginBottom: 4,
-            backgroundColor: '#35AAFF',
-            fontWeight: 'bold',
-            width: '60%',
-            alignSelf: 'center',
+            marginTop: 10, marginBottom: 4, backgroundColor: '#35AAFF', fontWeight: 'bold', width: '60%', alignSelf: 'center',
             borderRadius: 80,
           }}
-        >
-          <Button title="Show Graph" onPress={fetchData} />
+        ><Button title="Show Graph" onPress={fetchData} />
         </View>
 
 
 
 
-      {/* Line chart (displayed when showGraph is true) */}
         {showGraph && (
-          <LineChart
-            style={{ flex: 2, marginVertical: 55, borderRadius: 8, borderWidth: 2, borderColor: 'rgba(255, 0, 0, 0.2)' }}
-            data={chartData}
-            contentInset={{ top: 20, bottom: 20 }}
-            svg={{
-              stroke: 'rgb(255, 0, 0)', // Line color (red)
-              strokeWidth: 2, // Line width
-              strokeOpacity: 0.7, // Line opacity (0 to 1)
-              fill: 'rgba(255, 0, 0, 0.2)', // Area under the line color
-              fillOpacity: 1, // Area under the line opacity (0 to 1)
-            }}
-            curve={shape.curveBasis}
-            yMin={0}
-            yMax={Math.max(...chartData) + 10}
-          >
-            <Grid />
-          </LineChart>
+          <View style={{ flexDirection: 'row', height: 500, paddingVertical: 0 }}>
+            <YAxis
+              data={chartData}
+              yAccessor={({ item }) => item.value}
+              contentInset={{ top: 30, bottom: 100 }}
+              svg={{
+                fill: 'black',
+                fontSize: 12,
+                fontWeight: 'bold', // Bold font weight for X axis labels
+              }}
+              numberOfTicks={8}
+              formatLabel={(value) => `${value}`}
+              style={{ marginBottom: 10, marginLeft: 10 }}
+            />
+            <View style={{ flex: 1, marginLeft: 10, marginRight: 10 }}>
+              <LineChart
+                style={{ flex: 1 }}
+                data={chartData}
+                curve={shape.curveNatural}
+                svg={{
+                  stroke: 'rgb(255, 0, 0)', // Line color (red)
+                  strokeWidth: 2, // Line width
+                  strokeOpacity: 0.7, // Line opacity (0 to 1)
+                  fill: 'rgba(255, 0, 0, 0.2)', // Area under the line color
+                  fillOpacity: 1, // Area under the line opacity (0 to 1)
+                }}
+                showGrid={true}
+                contentInset={{ top: 30, bottom: 30 }}
+                yAccessor={({ item }) => item.value}
+                xScale={scale.scaleTime}
+                xAccessor={({ item }) => new Date(item.date)}
+                yMin={yMin}
+                yMax={yMax}
+              >
+                <Grid />
+              </LineChart>
+              <XAxis
+                style={{ height: 80, marginHorizontal: -100 }}
+                data={chartData}
+                formatLabel={(value, index) => moment(chartData[index].date).format('DD/MM')}
+                contentInset={{ left: 100, right: 110}} // Increased insets
+                svg={{
+                  fontSize: 14,
+                  fill: 'black',
+                  fontWeight: 'bold',
+                  rotation: 90,
+                  originY: 35,
+                  y: 1, // Potentially increase this if labels are still cut off
+                }}
+                scale={scale.scaleTime}
+                numberOfTicks={6}
+              />
+
+            </View>
+          </View>
         )}
+
+
       </View>
     </SafeAreaView>
   );
 };
+
 
 
 
@@ -231,7 +277,6 @@ const styles = StyleSheet.create({
 });
 
 export default Acesso;
-
 
 
 
