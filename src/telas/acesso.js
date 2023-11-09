@@ -13,7 +13,7 @@ const Acesso = ({ navigation }) => {
   const [backgroundColor, setBackgroundColor] = useState(COLORS.white);
   const [Price, setPrice] = useState('');
   const [chartData, setChartData] = useState([]);
-  const [selectedInfo, setSelectedInfo] = useState('close');
+  const [selectedInfo, setSelectedInfo] = useState('');
   const [infoOptions] = useState(['1. open', '2. high', '3. low', '4. close', '5. volume']);
   const [showGraph, setShowGraph] = useState(false);
 
@@ -37,13 +37,23 @@ const Acesso = ({ navigation }) => {
 
 
 
-
-
   const fetchData = async () => {
+
     const apiKey = 'demo'; // Use your actual API key here
     const symbol = 'IBM';
     const functionType = 'TIME_SERIES_DAILY';
     const url = `https://www.alphavantage.co/query?function=${functionType}&symbol=${symbol}&apikey=${apiKey}`;
+
+    // If "Select an item" is chosen, clear the graph and do not fetch new data
+    if (!selectedInfo || selectedInfo === "Select an item") {
+      setChartData([]);
+      setPrice('');
+      setShowGraph(false);
+      return; // Exit the function early
+    }
+
+
+
 
     try {
       const response = await axios.get(url);
@@ -78,20 +88,12 @@ const Acesso = ({ navigation }) => {
   };
 
 
-  // Function to handle the cursor movement and set state
-  const handleCursorChange = (value, props) => {
-    const chartData = props.scale.y.domain();
-    const closestPoint = chartData.reduce((prev, curr) =>
-      Math.abs(curr.x - value.x) < Math.abs(prev.x - value.x) ? curr : prev
-    );
-    setCursorValue(closestPoint);
-  };
-
 
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
       <View style={{ flex: 1 }}>
+
         <Text style={styles.centeredText}>
           (IBM) {selectedInfo.split(' ')[1]} stock quote last day: {Price}
         </Text>
@@ -121,8 +123,8 @@ const Acesso = ({ navigation }) => {
           <Button
             title="Show Graph"
             onPress={() => {
-              setShowGraph(false); // Hide the graph
-              fetchData(selectedInfo); // Fetch new data
+              //setShowGraph(false);
+              fetchData(selectedInfo);
             }}
           />
         </View>
@@ -131,25 +133,21 @@ const Acesso = ({ navigation }) => {
 
         {showGraph && (
           <VictoryChart
-            domainPadding={{ y: 60 }}
+            domainPadding={{ y: 50 }}
             height={400} // Height of the chart
             width={440}  // Width of the chart
             containerComponent={
               <VictoryCursorContainer
+                voronoiDimension="x"
                 cursorLabel={({ datum }) => `${datum.y.toFixed(0)}\n${moment(datum.x).format('MMM D')}`}
-                cursorLabelComponent={<VictoryLabel dy={-60} style={{ fontSize: 14, fontWeight: 'bold' }} />} // Moves the label up by 20 units
+                cursorLabelComponent={<VictoryLabel dy={-80} style={{ fontSize: 14, fontWeight: 'bold' }} />} // Moves the label up by 20 units
               />
-              // or tooltip
-              // <VictoryVoronoiC ontainer
-              //   voronoiDimension="x"
-              //   labelComponent={<VictoryTooltip flyoutStyle={{ fill: "white" }} />}
-              // />
             }
           >
             <VictoryLine
               animate={{
-                duration: 1200,
-                onLoad: { duration: 1200 }
+                duration: 1500,
+                onLoad: { duration: 1500 }
               }}
               data={chartData}
               style={{
@@ -167,7 +165,7 @@ const Acesso = ({ navigation }) => {
               style={{
                 grid: { stroke: "black", strokeWidth: 0.5 },
                 ticks: { stroke: "black", size: 5 },
-                tickLabels: { 
+                tickLabels: {
                   fontSize: 13,
                   padding: 5,
                   fontWeight: 'bold',
@@ -253,7 +251,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dropdownPicker: {
-    width: 150,
+    width: 190,
     height: 40,
     borderWidth: 1,
     borderColor: 'gray',
