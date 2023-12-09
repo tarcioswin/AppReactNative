@@ -1,19 +1,19 @@
 
 import { initializeApp } from "firebase/app";
-import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
+import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDsjpaiUGsSX6umoxBSBWVwkfk26w5eXXM",
-  authDomain: "dbboiapp.firebaseapp.com",
-  projectId: "dbboiapp",
-  storageBucket: "dbboiapp.appspot.com",
-  messagingSenderId: "52349007610",
-  appId: "1:52349007610:web:c988a944c6f7e478aefb43",
-  measurementId: "G-VB0NZPHDN4"
+  apiKey: "AIzaSyBWX85JWyqwONsr9w73tsun-EyRPRlhYaM",
+  authDomain: "arrobatrends-4d051.firebaseapp.com",
+  projectId: "arrobatrends-4d051",
+  storageBucket: "arrobatrends-4d051.appspot.com",
+  messagingSenderId: "102790426332",
+  appId: "1:102790426332:web:31d7b8f320b83420c38e19",
+  measurementId: "G-9JLHG8945D"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -24,5 +24,5 @@ export const auth=initializeAuth(app, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage),
 });
 
-export default app; // Export the app instance
+export { app, db }; // Export the app instance
 

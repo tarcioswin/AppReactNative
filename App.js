@@ -5,7 +5,9 @@ import Login from './src/telas/Login';
 import Signup from './src/telas/Signup';
 import Forgot from './src/telas/forgot';
 import acesso from './src/telas/acesso';
+import AboutScreen from './src/telas/AboutScreen';
 import EditInformation from './src/telas/EditInformation';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +23,7 @@ export default function App() {
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="forgot" component={Forgot} />
         <Stack.Screen name="acesso" component={acesso} />
+        <Stack.Screen name="AboutScreen" component={AboutScreen} />
         <Stack.Screen name="EditInformation" component={EditInformation} />
       </Stack.Navigator>
     </NavigationContainer>

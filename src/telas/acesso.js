@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../../components/colors';
 import axios from 'axios';
 import moment from 'moment';
-import { Picker } from '@react-native-picker/picker';
-import { VictoryChart, VictoryLine, VictoryAxis, VictoryCursorContainer, VictoryLabel } from 'victory-native';
+import { VictoryChart, VictoryLine, VictoryAxis, VictoryCursorContainer, VictoryLabel, VictoryArea, VictoryCandlestick} from 'victory-native';
+
 
 const Acesso = ({ navigation }) => {
   const [backgroundColor] = useState(COLORS.white);
@@ -14,27 +14,39 @@ const Acesso = ({ navigation }) => {
   const [chartData, setChartData] = useState([]);
   const [selectedInfo, setSelectedInfo] = useState('1. open');
   const [selectedInfoTime, setSelectedInfoTime] = useState('Daily');
-  const infoOptions = ['1. open', '2. high', '3. low', '4. close', '5. volume'];
-  const timeSeriesOptions = ['Daily', 'Weekly', 'Monthly', 'Intraday'];
+  const timeSeriesOptions = ['Intraday','Daily', 'Weekly', 'Monthly'];
   const [showGraph, setShowGraph] = useState(false);
   const [openPrice, setOpenPrice] = useState('');
   const [highPrice, setHighPrice] = useState('');
   const [lowPrice, setLowPrice] = useState('');
   const [closePrice, setClosePrice] = useState('');
   const [volume, setVolume] = useState('');
+  const [menuVisible, setMenuVisible] = useState(false); // State to control dropdown menu visibility
+  const [selectedItem, setSelectedItem] = useState('1. open')
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  
+
+
+  // Function to toggle dropdown menu
+  const toggleMenu = () => {
+    setMenuVisible(prevMenuVisible => !prevMenuVisible);
+  };
+
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: '',
+      headerTitle: 'Cotações',
       headerTintColor: 'black',
       headerStyle: styles.headerStyle,
       headerTitleStyle: { fontWeight: 'bold' },
+      headerTitleAlign: 'center', // Center the header title
+
       headerRight: () => (
-        <TouchableOpacity onPress={() => navigation.navigate('EditInformation')} style={styles.editButton}>
-          <Ionicons name="pencil-outline" size={20} color={COLORS.white} />
-          <Text style={styles.editButtonText}>Edit Inf.</Text>
+        <TouchableOpacity onPress={toggleMenu}>
+          <Ionicons name="menu" size={24} color={COLORS.white} />
         </TouchableOpacity>
       ),
+
     });
   }, [backgroundColor, navigation]);
 
@@ -54,6 +66,7 @@ const Acesso = ({ navigation }) => {
   };
 
   const fetchData = async (selectedInfoTime, selectedInfo) => {
+    setIsModalVisible(true); // Show the modal when data fetch starts
     const apiKey = 'demo';
     const symbol = 'IBM';
     let functionType = 'TIME_SERIES_';
@@ -96,7 +109,9 @@ const Acesso = ({ navigation }) => {
     } catch (error) {
       console.error('Error fetching data:', error);
     }
+    setIsModalVisible(false); // Hide the modal once data is fetched or in case of error
   };
+
 
   const processData = (timeSeries, selectedInfo) => {
     const startDate = getStartDate(selectedInfoTime);
@@ -112,6 +127,7 @@ const Acesso = ({ navigation }) => {
       .reverse();
   };
 
+
   const getStartDate = (selectedInfoTime) => {
     const date = new Date();
     switch (selectedInfoTime) {
@@ -123,37 +139,82 @@ const Acesso = ({ navigation }) => {
     return date;
   };
 
+
   // Function to handle press on stock data rows
   const handlePress = (value) => {
     setSelectedInfo(value);
-    // Additional actions can be added here if needed
+    setSelectedItem(value); // Set the selected item
   };
+
+
+  const getRowStyle = (itemValue) => {
+    return selectedItem === itemValue ? styles.stockDataRowSelected : styles.stockDataRow;
+  };
+
+  
+  // Dropdown Menu Component
+  const DropdownMenu = () => (
+    <TouchableOpacity
+      style={styles.menuOverlay}
+      onPress={toggleMenu}
+      activeOpacity={1}>
+      <View style={styles.dropdownStyle}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate('Login'); setMenuVisible(false); }}>
+          <Ionicons name="log-out-outline" size={24} color="black" />
+          <Text style={styles.menuItemText}>Logout</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate('EditInformation'); setMenuVisible(false); }}>
+          <Ionicons name="pencil-outline" size={24} color="black" />
+          <Text style={styles.menuItemText}>Editar dados</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => { navigation.navigate('AboutScreen'); setMenuVisible(false); }}>
+          <Ionicons name="information-circle-outline" size={24} color="black" />
+          <Text style={styles.menuItemText}>Sobre</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+
+
+  const TimeSeriesButton = ({ label, onPress, isSelected }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.timeSeriesButton,
+        isSelected ? styles.timeSeriesButtonSelected : null,
+      ]}
+    >
+      <Text style={styles.timeSeriesButtonText}>{label}</Text>
+    </TouchableOpacity>
+  );
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
       <View style={{ flex: 1 }}>
 
+
         <View style={styles.stockInfoContainer}>
           <Text style={styles.titleText}>
-            IBM {selectedInfoTime} Stock Quote
+            Cotação de ações da IBM
           </Text>
-          <TouchableOpacity style={styles.stockDataRow} onPress={() => handlePress('1. open')}>
-            <Text style={styles.stockLabel}>Open:</Text>
+          <TouchableOpacity style={getRowStyle('1. open')} onPress={() => handlePress('1. open')}>
+            <Text style={styles.stockLabel}>Abertura:</Text>
             <Text style={styles.stockValue}>{openPrice}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.stockDataRow} onPress={() => handlePress('2. high')}>
-            <Text style={styles.stockLabel}>High:</Text>
+          <TouchableOpacity style={getRowStyle('2. high')} onPress={() => handlePress('2. high')}>
+            <Text style={styles.stockLabel}>Máxima:</Text>
             <Text style={styles.stockValue}>{highPrice}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.stockDataRow} onPress={() => handlePress('3. low')}>
-            <Text style={styles.stockLabel}>Low:</Text>
+          <TouchableOpacity style={getRowStyle('3. low')} onPress={() => handlePress('3. low')}>
+            <Text style={styles.stockLabel}>Mínima:</Text>
             <Text style={styles.stockValue}>{lowPrice}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.stockDataRow} onPress={() => handlePress('4. close')}>
-            <Text style={styles.stockLabel}>Close:</Text>
+          <TouchableOpacity style={getRowStyle('4. close')} onPress={() => handlePress('4. close')}>
+            <Text style={styles.stockLabel}>Fechamento:</Text>
             <Text style={styles.stockValue}>{closePrice}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.stockDataRow} onPress={() => handlePress('5. volume')}>
+          <TouchableOpacity style={getRowStyle('5. volume')} onPress={() => handlePress('5. volume')}>
             <Text style={styles.stockLabel}>Volume:</Text>
             <Text style={styles.stockValue}>{volume}</Text>
           </TouchableOpacity>
@@ -163,28 +224,47 @@ const Acesso = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.dropdownContainer}>
-
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedInfoTime}
-              onValueChange={(value) => setSelectedInfoTime(value)}
-              style={styles.dropdownPicker}
-              itemStyle={{ color: 'black', fontSize: 16 }}
-            >
-              {timeSeriesOptions.map((option, index) => (
-                <Picker.Item key={index} label={option} value={option} />
-              ))}
-            </Picker>
+        <Modal
+          transparent={true}
+          animationType="fade"
+          visible={isModalVisible}
+          onRequestClose={() => setIsModalVisible(false)}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <ActivityIndicator size="large" color="#0000ff" />
+              <Text>Loading...</Text>
+            </View>
           </View>
-        </View>
+        </Modal>
 
+        {menuVisible && <DropdownMenu />}
+
+
+
+
+        <View style={styles.timeSeriesButtonContainer}>
+          {timeSeriesOptions.map((option) => {
+            let label = option;
+            if (option === 'Intraday') label = '1D';
+            if (option === 'Daily') label = '15D';
+            if (option === 'Weekly') label = '6M';
+            if (option === 'Monthly') label = '1Y';
+            return (
+              <TimeSeriesButton
+                key={option}
+                label={label}
+                onPress={() => setSelectedInfoTime(option)}
+                isSelected={selectedInfoTime === option}
+              />
+            );
+          })}
+        </View>
 
 
         {showGraph && (
           <View style={styles.graphContainer}>
             <View style={styles.titleContainer}>
-              <Text style={styles.graphTitle}> IBM {selectedInfo.replace(/^\d+\. /, "")} Stock Performance</Text>
             </View>
             <VictoryChart
               domainPadding={{ y: 50 }}
@@ -253,10 +333,6 @@ const Acesso = ({ navigation }) => {
         )}
 
 
-
-
-
-
       </View>
     </SafeAreaView>
   );
@@ -267,8 +343,108 @@ const screenHeight = Dimensions.get('window').height;
 
 
 const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  timeSeriesButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    paddingHorizontal: 110,
+  },
+  timeSeriesButton: {
+    backgroundColor: '#f5f5f5',
+    marginHorizontal: 5, // Reduce this value to decrease space between buttons
+    padding: 10,
+    borderRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  timeSeriesButtonSelected: {
+    backgroundColor: '#ADD8E6',
+  },
+  timeSeriesButtonText: {
+    color: '#333',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  stockDataRowSelected: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#ADD8E6', // white background for each row
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+    width: screenWidth * 0.8, // 80% of the screen width
+    height: screenHeight * 0.045, // 20% of the screen height 
+  },
+  dropdownStyle: {
+    position: 'absolute',
+    top: -30,      // Adjust this to move the menu up or down
+    right: 10,    // Adjust this to move the menu left or right
+    // left: 10,   // Use 'left' instead of 'right' if you want to position from the left
+    // bottom: 60, // Use 'bottom' to position from the bottom of the screen
+    width: 150,   // Width of the dropdown menu
+    // height: 100, // Height of the dropdown menu, if you want to fix it
+    backgroundColor: 'white',
+    borderRadius: 5,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  menuItemText: {
+    marginVertical: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+  menuOverlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  menuItemText: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#333',
+  },
   headerStyle: {
-    backgroundColor: '#35AAFF',  // Background color of the header
+    backgroundColor: '#48D1CC',  // Background color of the header
     elevation: 4,                // Shadow under the header for Android
     shadowOpacity: 0.3,          // Shadow opacity for iOS
     shadowRadius: 3,             // Shadow radius for iOS
@@ -278,7 +454,7 @@ const styles = StyleSheet.create({
     // Additional styles as needed
   },
   graphContainer: {
-    marginTop: -15,  // Reduce this value to move the graph up
+    marginTop: -45,  // Reduce this value to move the graph up
   },
   titleContainer: {
     alignItems: 'center', // Center content horizontally
@@ -293,11 +469,13 @@ const styles = StyleSheet.create({
     marginBottom: -60, // Space between the title and the chart
     marginTop: 12,
   },
+
+
   dropdownContainer: {
     flexDirection: 'row', // Aligns children horizontally
     justifyContent: 'space-evenly', // Evenly space out children
     alignItems: 'center', // Centers children vertically
-    padding: 10, // Add some padding around the container
+    padding: 1, // Add some padding around the container
   },
 
   pickerContainer: {
@@ -305,11 +483,6 @@ const styles = StyleSheet.create({
     borderColor: '#ddd', // A softer border color
     borderRadius: 12, // Rounded corners
     backgroundColor: '#ffffff', // White background for a clean look
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3, // Slight elevation for a subtle shadow (Android)
     alignItems: 'center',
     justifyContent: 'center',
     height: 40,
@@ -319,37 +492,11 @@ const styles = StyleSheet.create({
 
   dropdownPicker: {
     width: '100%',
-    height: 40,
+    height: 200,
     borderWidth: 0, // Removing the border for the inner picker
     borderRadius: 12, // Rounded corners to match the container
     color: '#333', // Darker font color for contrast
-    fontSize: 14, // Slightly larger font size for readability
-  },
-
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E90FF', // A slightly different shade for variety
-    borderRadius: 12, // More pronounced roundness
-    paddingVertical: 10, // Slightly larger button for better touch area
-    paddingHorizontal: 15, // More horizontal padding for a wider button
-    alignSelf: 'flex-end',
-    marginTop: 'auto',
-    marginBottom: 20, // More space at the bottom
-    shadowColor: '#000', // Shadow for depth
-    shadowOffset: { width: 0, height: 2 }, // Position of the shadow
-    shadowOpacity: 0.3, // Shadow opacity
-    shadowRadius: 4, // Shadow blur radius
-    elevation: 5, // Elevation for Android
-  },
-
-  editButtonText: {
-    color: COLORS.white,
-    fontSize: 16, // Slightly larger text
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)', // Text shadow for better readability
-    textShadowOffset: { width: 1, height: 1 }, // Text shadow position
-    textShadowRadius: 2, // Text shadow blur radius
+    fontSize: 17, // Slightly larger font size for readability
   },
 
   stockInfoContainer: {
@@ -374,6 +521,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333', // dark text color
     marginBottom: 8,
+    textAlign: 'center', // Center text horizontally
   },
 
   stockDataRow: {

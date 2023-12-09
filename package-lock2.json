@@ -1,11 +1,11 @@
 {
-  "name": "telalogin",
+  "name": "arrobatrends",
   "version": "1.0.0",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
-      "name": "telalogin",
+      "name": "arrobatrends",
       "version": "1.0.0",
       "dependencies": {
         "@react-navigation/drawer": "^6.6.3",
