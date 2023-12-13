@@ -4,9 +4,16 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from '../../components/colors';
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import topo from '../../assets/FigureApp.jpeg';
+import {GoogleSignin,statusCodes,} from '@react-native-google-signin/google-signin';
+import { auth, db } from '../../src/services/firebaseConfig';
+import { doc, setDoc } from "firebase/firestore";
 
+ // Google SignIn
+ GoogleSignin.configure({
+  webClientId: "102790426332-gm15k2847gdg2jjq1jjtaf0ms7vu2det.apps.googleusercontent.com",
+});
 
 const window = Dimensions.get('window');
 
@@ -119,6 +126,44 @@ const Login = () => {
   };
 
 
+  const handleGoogleSignIn = async () => {
+    setIsModalVisible(true);
+      try {
+        await GoogleSignin.hasPlayServices();
+        await GoogleSignin.signOut();
+        const userInfo = await GoogleSignin.signIn();
+        setIsModalVisible(false);
+        const googleCredential = GoogleAuthProvider.credential(userInfo.idToken);
+        setIsModalVisible(true);
+        const userCredential = await signInWithCredential(auth, googleCredential);
+  
+        // User is signed in, now save their data to Firestore
+        const user = userCredential.user;
+        await setDoc(doc(db,"usuario", user.uid), {
+          name: user.displayName,
+          email: user.email,
+  
+        });
+  
+        // Navigate to the desired screen after successful login
+        navigation.navigate('acesso');
+        setIsModalVisible(false);
+  
+      } catch (error) {
+        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          Alert.alert('Login Cancelado', 'Google sign-in foi candelado.');
+        } else if (error.code === statusCodes.IN_PROGRESS) {
+          Alert.alert('Login In Progress', 'Google sign-in is already in progress.');
+        } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+          Alert.alert('Play Services Error', 'Google Play services are not available.');
+        } else {
+          Alert.alert('Login Error', 'An error occurred during Google sign-in.');
+          console.error(error);
+        }
+        setIsModalVisible(false);
+      }
+    };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
 
@@ -221,7 +266,8 @@ const Login = () => {
               }} resizeMode="contain" />
               <Text style={{ fontWeight: 'bold', fontSize: 16, }}>Facebook</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.socialMediaButton}>
+
+            <TouchableOpacity style={styles.socialMediaButton}  onPress={handleGoogleSignIn}>
               <Image source={require('../../assets/google.png')} style={{
                 height: 36, width: 36, marginRight: 8, borderColor: '#ddd',
                 shadowColor: '#000'

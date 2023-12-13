@@ -1,13 +1,17 @@
 {
   "expo": {
     "name": "Arrobatrends",
+    "scheme": "arrobatrends",
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
     "slug": "ArrobaTrends",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/FigureApp.jpeg",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/FigureApp.jpeg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -19,12 +23,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/FigureApp.jpeg",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "googleServicesFile": "./google-services.json",
+      "package": "com.tarcioswin.ArrobaTrends"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5255381f-2996-4d45-a871-b3db09117c0f"
+      }
     }
   }
 }

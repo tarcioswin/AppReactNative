@@ -4,9 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
 import COLORS from '../../components/colors';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential} from 'firebase/auth';
 import { doc, setDoc } from "firebase/firestore";
-import {auth, db } from '../../src/services/firebaseConfig'; 
+import { auth, db } from '../../src/services/firebaseConfig';
+import {GoogleSignin,statusCodes,} from '@react-native-google-signin/google-signin';
+
+
+  // Google SignIn
+  GoogleSignin.configure({
+    webClientId: "102790426332-gm15k2847gdg2jjq1jjtaf0ms7vu2det.apps.googleusercontent.com",
+  });
 
 
 const Registrar = ({ navigation }) => {
@@ -21,6 +28,9 @@ const Registrar = ({ navigation }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
+
+
+
   useEffect(() => {
     navigation.setOptions({
       headerTitle: 'Criar conta',
@@ -30,6 +40,8 @@ const Registrar = ({ navigation }) => {
       headerTitleAlign: 'center' // Center the header title
     });
   }, [backgroundColor]);
+
+
 
 
   const handleRegister = async () => {
@@ -54,7 +66,7 @@ const Registrar = ({ navigation }) => {
         email: email,
         telefone: fullPhoneNumber,
       });
-      Alert.alert('Usuário cadastrado', 'Você foi cadastrado com sucesso!', [{ text: 'OK', onPress: () => {navigation.navigate('Login'); setIsLoggingIn(false);}}]);;
+      Alert.alert('Usuário cadastrado', 'Você foi cadastrado com sucesso!', [{ text: 'OK', onPress: () => { navigation.navigate('Login'); setIsLoggingIn(false); } }]);;
       setIsModalVisible(false);
     } catch (error) {
       const errorCode = error.code;
@@ -82,12 +94,49 @@ const Registrar = ({ navigation }) => {
   };
 
 
+ const handleGoogleSignIn = async () => {
+  setIsModalVisible(true);
+    try {
+      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.signOut();
+      const userInfo = await GoogleSignin.signIn();
+      setIsModalVisible(false);
+      const googleCredential = GoogleAuthProvider.credential(userInfo.idToken);
+      setIsModalVisible(true);
+      const userCredential = await signInWithCredential(auth, googleCredential);
+
+      // User is signed in, now save their data to Firestore
+      const user = userCredential.user;
+      await setDoc(doc(db,"usuario", user.uid), {
+        name: user.displayName,
+        email: user.email,
+
+      });
+
+      // Navigate to the desired screen after successful login
+      navigation.navigate('acesso');
+      setIsModalVisible(false);
+
+    } catch (error) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        Alert.alert('Login Cancelado', 'Google sign-in foi candelado.');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        Alert.alert('Login In Progress', 'Google sign-in is already in progress.');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Play Services Error', 'Google Play services are not available.');
+      } else {
+        Alert.alert('Login Error', 'An error occurred during Google sign-in.');
+        console.error(error);
+      }
+      setIsModalVisible(false);
+    }
+  };
 
 
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      
+
       <Modal
         transparent={true}
         animationType="fade"
@@ -102,168 +151,171 @@ const Registrar = ({ navigation }) => {
         </View>
       </Modal>
 
-        <View style={{ flex: 1, marginHorizontal: 1 }}>
+      <View style={{ flex: 1, marginHorizontal: 1 }}>
 
-          <View style={{ marginTop: 1 }}>
-            <Text style={styles.label}>Nome</Text>
+        <View style={{ marginTop: 1 }}>
+          <Text style={styles.label}>Nome</Text>
 
-            <View style={styles.inputContainer}>
-              <TextInput
-                placeholder='Entre com seu nome'
-                autoCapitalize="none"
-                placeholderTextColor={COLORS.black}
-                keyboardType='default'
-                style={{ width: "100%" }}
-                onChangeText={(text) => setName(text)}
-              />
-            </View>
-          </View>
-
-          <View style={{ marginBottom: 1 }}>
-            <Text style={styles.label}>Email</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                placeholder="Entre com seu email"
-                placeholderTextColor={COLORS.black}
-                keyboardType="email-address"
-                style={styles.input}
-                onChangeText={(text) => setEmail(text)}
-                autoCapitalize="none"
-              />
-            </View>
-          </View>
-
-
-          <View style={{ marginBottom: 1 }}>
-            <Text style={styles.label}>Número de telefone</Text>
-            <View style={{
-              width: "95%",
-              alignSelf: "center",
-              height: 48,
-              borderColor: COLORS.black,
-              borderWidth: 1,
-              borderRadius: 8,
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "space-between",
-              paddingLeft: 20,
-              backgroundColor: 'white',
-              borderColor: COLORS.white,
-              shadowColor: '#000',  // Shadow color
-              shadowOffset: { width: 0, height: 2 },  // Shadow offset
-              shadowOpacity: 0.25,  // Shadow opacity
-              shadowRadius: 3.84,  // Shadow radius
-              elevation: 5,  // Elevation for Android
-            }}>
-              <TextInput
-                placeholder='DDD'
-                placeholderTextColor={COLORS.black}
-                keyboardType='numeric'
-                style={{
-                  width: "12%",
-                  borderRightWidth: 1,
-                  height: "100%"
-                }}
-                onChangeText={(text) => setDdd(text)}
-              />
-              <TextInput
-                placeholder='Entre com seu número'
-                placeholderTextColor={COLORS.black}
-                keyboardType='numeric'
-                style={{ width: "80%" }}
-                onChangeText={(text) => setTelefone(text)}
-              />
-            </View>
-          </View>
-
-
-
-          <View style={{ marginBottom: 12 }}>
-            <Text style={styles.label}>Password</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                placeholder="Entre com seu password"
-                placeholderTextColor={COLORS.black}
-                secureTextEntry={!isPasswordShown}
-                autoCapitalize="none"
-                style={styles.input}
-                onChangeText={(text) => setPassword(text)}
-              />
-              <TouchableOpacity
-                onPress={() => setIsPasswordShown(!isPasswordShown)}
-                style={styles.passwordVisibilityIcon}
-              >
-                {isPasswordShown ? (
-                  <Ionicons name="eye" size={24} color={COLORS.black} />
-                ) : (
-                  <Ionicons name="eye-off" size={24} color={COLORS.black} />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-
-
-          <View style={{
-            flexDirection: 'row',
-            marginVertical: 6,
-            width: "95%",
-            alignSelf: "center",
-          }}>
-            <Checkbox
-              style={{ marginRight: 8, backgroundColor: 'white' }}
-              value={isChecked}
-              onValueChange={setIsChecked}
-              color={isChecked ? COLORS.primary : undefined}
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder='Entre com seu nome'
+              autoCapitalize="none"
+              placeholderTextColor={COLORS.black}
+              keyboardType='default'
+              style={{ width: "100%" }}
+              onChangeText={(text) => setName(text)}
             />
-            <Text style={{
-              fontWeight: 'bold', color: 'black'
-            }}>Eu aceito os termos e condições propostas</Text>
-          </View>
-
-
-
-
-          <TouchableOpacity style={styles.registerButton} disabled={isLoggingIn} onPress={handleRegister} >
-            <Text style={styles.registerButtonText}>Registrar</Text>
-          </TouchableOpacity>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 30 }}>
-            <View style={{ flex: 1, height: 3, backgroundColor: COLORS.black, marginLeft: 20 }} />
-            <Text style={{ paddingHorizontal: 10, fontSize: 20, color: COLORS.black,fontWeight:'bold' }}>ou</Text>
-            <View style={{ flex: 1, height: 3, backgroundColor: COLORS.black, marginRight: 20 }} />
-          </View>
-
-
-
-          {/* Your Social Media Buttons JSX */}
-          <View style={styles.socialMediaButtonsContainer}>
-            <TouchableOpacity style={styles.socialMediaButton}>
-              <Image
-                source={require('../../assets/facebook.png')}
-                style={{ height: 36, width: 36, marginRight: 8 }}
-                resizeMode="contain"
-              />
-              <Text style={{ fontWeight: 'bold', fontSize: 16, }}>Facebook</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.socialMediaButton}>
-              <Image
-                source={require('../../assets/google.png')}
-                style={{ height: 36, width: 36, marginRight: 8 }}
-                resizeMode="contain"
-              />
-              <Text style={{ fontWeight: 'bold', fontSize: 16, }}>Google</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.loginTextContainer}>
-            <Text style={styles.loginText}>Eu Já tenho</Text>
-            <Pressable disabled={isLoggingIn} onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLinkText}>Login</Text>
-            </Pressable>
           </View>
         </View>
-      </SafeAreaView>
+
+        <View style={{ marginBottom: 1 }}>
+          <Text style={styles.label}>Email</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="Entre com seu email"
+              placeholderTextColor={COLORS.black}
+              keyboardType="email-address"
+              style={styles.input}
+              onChangeText={(text) => setEmail(text)}
+              autoCapitalize="none"
+            />
+          </View>
+        </View>
+
+
+        <View style={{ marginBottom: 1 }}>
+          <Text style={styles.label}>Número de telefone</Text>
+          <View style={{
+            width: "95%",
+            alignSelf: "center",
+            height: 48,
+            borderColor: COLORS.black,
+            borderWidth: 1,
+            borderRadius: 8,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            paddingLeft: 20,
+            backgroundColor: 'white',
+            borderColor: COLORS.white,
+            shadowColor: '#000',  // Shadow color
+            shadowOffset: { width: 0, height: 2 },  // Shadow offset
+            shadowOpacity: 0.25,  // Shadow opacity
+            shadowRadius: 3.84,  // Shadow radius
+            elevation: 5,  // Elevation for Android
+          }}>
+            <TextInput
+              placeholder='DDD'
+              placeholderTextColor={COLORS.black}
+              keyboardType='numeric'
+              style={{
+                width: "12%",
+                borderRightWidth: 1,
+                height: "100%"
+              }}
+              onChangeText={(text) => setDdd(text)}
+            />
+            <TextInput
+              placeholder='Entre com seu número'
+              placeholderTextColor={COLORS.black}
+              keyboardType='numeric'
+              style={{ width: "80%" }}
+              onChangeText={(text) => setTelefone(text)}
+            />
+          </View>
+        </View>
+
+
+
+        <View style={{ marginBottom: 12 }}>
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              placeholder="Entre com seu password"
+              placeholderTextColor={COLORS.black}
+              secureTextEntry={!isPasswordShown}
+              autoCapitalize="none"
+              style={styles.input}
+              onChangeText={(text) => setPassword(text)}
+            />
+            <TouchableOpacity
+              onPress={() => setIsPasswordShown(!isPasswordShown)}
+              style={styles.passwordVisibilityIcon}
+            >
+              {isPasswordShown ? (
+                <Ionicons name="eye" size={24} color={COLORS.black} />
+              ) : (
+                <Ionicons name="eye-off" size={24} color={COLORS.black} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+
+
+        <View style={{
+          flexDirection: 'row',
+          marginVertical: 6,
+          width: "95%",
+          alignSelf: "center",
+        }}>
+          <Checkbox
+            style={{ marginRight: 8, backgroundColor: 'white' }}
+            value={isChecked}
+            onValueChange={setIsChecked}
+            color={isChecked ? COLORS.primary : undefined}
+          />
+          <Text style={{
+            fontWeight: 'bold', color: 'black'
+          }}>Eu aceito os termos e condições propostas</Text>
+        </View>
+
+
+
+
+        <TouchableOpacity style={styles.registerButton} disabled={isLoggingIn} onPress={handleRegister} >
+          <Text style={styles.registerButtonText}>Registrar</Text>
+        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 30 }}>
+          <View style={{ flex: 1, height: 3, backgroundColor: COLORS.black, marginLeft: 20 }} />
+          <Text style={{ paddingHorizontal: 10, fontSize: 20, color: COLORS.black, fontWeight: 'bold' }}>ou</Text>
+          <View style={{ flex: 1, height: 3, backgroundColor: COLORS.black, marginRight: 20 }} />
+        </View>
+
+
+
+        {/* Your Social Media Buttons JSX */}
+        <View style={styles.socialMediaButtonsContainer}>
+          <TouchableOpacity style={styles.socialMediaButton}>
+            <Image
+              source={require('../../assets/facebook.png')}
+              style={{ height: 36, width: 36, marginRight: 8 }}
+              resizeMode="contain"
+            />
+            <Text style={{ fontWeight: 'bold', fontSize: 16, }}>Facebook</Text>
+          </TouchableOpacity>
+
+
+
+          <TouchableOpacity style={styles.socialMediaButton}  onPress={handleGoogleSignIn}>
+            <Image
+              source={require('../../assets/google.png')}
+              style={{ height: 36, width: 36, marginRight: 8 }}
+              resizeMode="contain"
+            />
+            <Text style={{ fontWeight: 'bold', fontSize: 16, }}>Google</Text>
+          </TouchableOpacity>
+        </View>
+
+
+        <View style={styles.loginTextContainer}>
+          <Text style={styles.loginText}>Eu Já tenho</Text>
+          <Pressable disabled={isLoggingIn} onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginLinkText}>Login</Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -375,7 +427,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     borderRadius: 10,
     backgroundColor: 'white',
-     shadowColor: '#000',  // Shadow color
+    shadowColor: '#000',  // Shadow color
     shadowOffset: { width: 0, height: 2 },  // Shadow offset
     shadowOpacity: 0.25,  // Shadow opacity
     shadowRadius: 3.84,  // Shadow radius
