@@ -8,10 +8,10 @@
     "slug": "ArrobaTrends",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/FigureApp.jpeg",
+    "icon": "./assets/Incon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/FigureApp.jpeg",
+      "image": "./assets/Incon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -23,7 +23,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/FigureApp.jpeg",
+        "foregroundImage": "./assets/Incon.png",
         "backgroundColor": "#ffffff"
       },
       "googleServicesFile": "./google-services.json",
