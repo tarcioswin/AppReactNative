@@ -4,11 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
 import COLORS from '../../components/colors';
-import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential} from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, FacebookAuthProvider} from 'firebase/auth';
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from '../../src/services/firebaseConfig';
 import {GoogleSignin,statusCodes,} from '@react-native-google-signin/google-signin';
-
+import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 
   // Google SignIn
   GoogleSignin.configure({
@@ -132,7 +132,46 @@ const Registrar = ({ navigation }) => {
     }
   };
 
+  const handleFacebookSignIn = async () => {
+    try {
+      // Attempt login with permissions
+      const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
 
+   
+      if (result.isCancelled) {
+        console.log('User cancelled the Facebook login process');
+        Alert.alert('Login Cancelled', 'You cancelled the Facebook login process.');
+        return; // Early return if the user cancelled the login
+      }
+
+      // Get the access token
+      const data = await AccessToken.getCurrentAccessToken();
+
+      if (!data) {
+        throw new Error('Something went wrong obtaining access token');
+      }
+
+      // Create a Firebase credential with the AccessToken
+      const facebookCredential = FacebookAuthProvider.credential(data.accessToken);
+
+      // Sign in with credential from the Facebook user
+      const userCredential = await signInWithCredential(auth, facebookCredential);
+      const user = userCredential.user;
+
+      // Save user data to Firestore
+      await setDoc(doc(db, "usuario", user.uid), {
+        name: user.displayName,
+        email: user.email,
+      });
+
+      // Navigate to the desired screen after successful login
+      navigation.navigate('acesso');
+
+    } catch (error) {
+      console.log(error);
+      Alert.alert('Login Failed', error.message);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -286,14 +325,14 @@ const Registrar = ({ navigation }) => {
 
         {/* Your Social Media Buttons JSX */}
         <View style={styles.socialMediaButtonsContainer}>
-          <TouchableOpacity style={styles.socialMediaButton}>
+        <TouchableOpacity style={styles.socialMediaButton} onPress={handleFacebookSignIn}>
             <Image
               source={require('../../assets/facebook.png')}
               style={{ height: 36, width: 36, marginRight: 8 }}
               resizeMode="contain"
             />
             <Text style={{ fontWeight: 'bold', fontSize: 16, }}>Facebook</Text>
-          </TouchableOpacity>
+        </TouchableOpacity>
 
 
 
