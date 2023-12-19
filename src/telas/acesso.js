@@ -232,7 +232,7 @@ const Acesso = ({ navigation }) => {
         >
           <View style={styles.centeredView}>
             <View style={styles.modalView}>
-              <ActivityIndicator size="large" color="#0000ff" />
+              <ActivityIndicator size="large" color='#48D1CC' />
               <Text>Loading...</Text>
             </View>
           </View>

@@ -1,0 +1,11 @@
+<resources>
+  <string name="app_name">Arrobatrends</string>
+  <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
+  <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">light</string>
+
+  <string name="facebook_app_id">1092149478625947</string>
+  <string name="fb_login_protocol_scheme">fb1092149478625947</string>
+  <string name="facebook_client_token">cc537d405121f7ff9c26f165440da46f</string>
+
+</resources>

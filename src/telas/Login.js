@@ -13,7 +13,7 @@ import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 
  // Google SignIn
  GoogleSignin.configure({
-  webClientId: "102790426332-gm15k2847gdg2jjq1jjtaf0ms7vu2det.apps.googleusercontent.com",
+  webClientId: "204711201523-enmhk647tfuaeemrqlmkuj19tman9o69.apps.googleusercontent.com",
 });
 
 const window = Dimensions.get('window');
@@ -127,6 +127,9 @@ const Login = () => {
   };
 
 
+
+
+
   const handleGoogleSignIn = async () => {
     setIsModalVisible(true);
       try {
@@ -166,46 +169,55 @@ const Login = () => {
     };
 
 
+
     const handleFacebookSignIn = async () => {
+      setIsModalVisible(true);
       try {
-        // Attempt login with permissions
         const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
-  
-     
+    
         if (result.isCancelled) {
+          setIsModalVisible(false);
           console.log('User cancelled the Facebook login process');
           Alert.alert('Login Cancelled', 'You cancelled the Facebook login process.');
-          return; // Early return if the user cancelled the login
+          return;
         }
-  
-        // Get the access token
+    
         const data = await AccessToken.getCurrentAccessToken();
-  
         if (!data) {
           throw new Error('Something went wrong obtaining access token');
         }
-  
-        // Create a Firebase credential with the AccessToken
+        setIsModalVisible(false);
         const facebookCredential = FacebookAuthProvider.credential(data.accessToken);
-  
-        // Sign in with credential from the Facebook user
-        const userCredential = await signInWithCredential(auth, facebookCredential);
-        const user = userCredential.user;
-  
-        // Save user data to Firestore
-        await setDoc(doc(db, "usuario", user.uid), {
-          name: user.displayName,
-          email: user.email,
-        });
-  
-        // Navigate to the desired screen after successful login
-        navigation.navigate('acesso');
-  
+        setIsModalVisible(true);
+        try {
+          const userCredential = await signInWithCredential(auth, facebookCredential);
+          const user = userCredential.user;
+    
+          await setDoc(doc(db, "usuario", user.uid), {
+            name: user.displayName,
+            email: user.email,
+          });
+    
+          setIsModalVisible(false);
+          navigation.navigate('acesso');
+
+        } catch (innerError) {
+          if (innerError.code === 'auth/account-exists-with-different-credential' || innerError.code === 'auth/email-already-in-use')
+          {
+            //Alert.alert('Erro de Login', 'Email já cadastrado');
+            setIsModalVisible(false);
+            navigation.navigate('acesso');
+          } else {
+            throw innerError;
+          }
+        }
       } catch (error) {
         console.log(error);
         Alert.alert('Login Failed', error.message);
       }
+      setIsModalVisible(false);
     };
+    
   
 
   return (
@@ -219,7 +231,7 @@ const Login = () => {
       >
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <ActivityIndicator size="large" color="#0000ff" />
+            <ActivityIndicator size="large" color='#48D1CC' />
             <Text>Loading...</Text>
           </View>
         </View>

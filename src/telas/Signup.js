@@ -4,15 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Checkbox } from 'expo-checkbox';
 import COLORS from '../../components/colors';
-import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, FacebookAuthProvider} from 'firebase/auth';
-import { doc, setDoc } from "firebase/firestore";
+import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, FacebookAuthProvider, signOut} from 'firebase/auth';
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from '../../src/services/firebaseConfig';
 import {GoogleSignin,statusCodes,} from '@react-native-google-signin/google-signin';
 import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
 
   // Google SignIn
   GoogleSignin.configure({
-    webClientId: "102790426332-gm15k2847gdg2jjq1jjtaf0ms7vu2det.apps.googleusercontent.com",
+    webClientId: "204711201523-enmhk647tfuaeemrqlmkuj19tman9o69.apps.googleusercontent.com",
   });
 
 
@@ -132,46 +132,60 @@ const Registrar = ({ navigation }) => {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    try {
-      // Attempt login with permissions
-      const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
 
-   
+
+  const handleFacebookSignIn = async () => {
+    setIsModalVisible(true);
+    try {
+      const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+  
       if (result.isCancelled) {
+        setIsModalVisible(false);
         console.log('User cancelled the Facebook login process');
         Alert.alert('Login Cancelled', 'You cancelled the Facebook login process.');
-        return; // Early return if the user cancelled the login
+        return;
       }
-
-      // Get the access token
+  
       const data = await AccessToken.getCurrentAccessToken();
-
       if (!data) {
         throw new Error('Something went wrong obtaining access token');
       }
-
-      // Create a Firebase credential with the AccessToken
+      setIsModalVisible(false);
       const facebookCredential = FacebookAuthProvider.credential(data.accessToken);
+      setIsModalVisible(true);
+      try {
+        const userCredential = await signInWithCredential(auth, facebookCredential);
+        const user = userCredential.user;
+  
+        await setDoc(doc(db, "usuario", user.uid), {
+          name: user.displayName,
+          email: user.email,
+        });
+  
+        setIsModalVisible(false);
+        navigation.navigate('acesso');
 
-      // Sign in with credential from the Facebook user
-      const userCredential = await signInWithCredential(auth, facebookCredential);
-      const user = userCredential.user;
-
-      // Save user data to Firestore
-      await setDoc(doc(db, "usuario", user.uid), {
-        name: user.displayName,
-        email: user.email,
-      });
-
-      // Navigate to the desired screen after successful login
-      navigation.navigate('acesso');
-
+      } catch (innerError) {
+        if (innerError.code === 'auth/account-exists-with-different-credential' || innerError.code === 'auth/email-already-in-use')
+        {
+          //Alert.alert('Erro de Login', 'Email já cadastrado');
+          setIsModalVisible(false);
+          navigation.navigate('acesso');
+        } else {
+          throw innerError;
+        }
+      }
     } catch (error) {
       console.log(error);
       Alert.alert('Login Failed', error.message);
     }
+    setIsModalVisible(false);
   };
+  
+
+  
+
+  
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

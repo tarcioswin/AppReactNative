@@ -6,9 +6,10 @@ const AppInfo = ({ navigation }) => {
 
     useEffect(() => {
         navigation.setOptions({
-            headerTintColor: 'white',
+            headerTintColor: 'black',
             headerStyle: styles.headerStyle,
-            headerTitle: 'Sobre o App'
+            headerTitle: 'Sobre o App',
+            headerTitleAlign: 'center', // Center the header title
         });
     }, [navigation]);
 

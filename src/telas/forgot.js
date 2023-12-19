@@ -1,24 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Image, Pressable, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Checkbox } from 'expo-checkbox';
 import COLORS from '../../components/colors';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from '../../src/services/firebaseConfig';
+import { getAuth, sendPasswordResetEmail,fetchSignInMethodsForEmail } from 'firebase/auth';
 
 
-const Registrar = ({ navigation }) => {
-  const [isPasswordShown, setIsPasswordShown] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+
+const Reset = ({ navigation }) => {
+
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [ddd, setDdd] = useState('');
   const [backgroundColor] = useState(COLORS.white);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   useEffect(() => {
@@ -32,64 +23,41 @@ const Registrar = ({ navigation }) => {
   }, [backgroundColor]);
 
 
-  const handleRegister = async () => {
-
-    if (!isChecked) {
-      Alert.alert(
-        'Termos e Condições',
-        'Você precisa aceitar os termos e condições para prosseguir com o cadastro.'
-      );
-      return;
-    }
-
+  const handlePasswordReset = () => {
+    setIsModalVisible(true); // Show a loading indicator
     const auth = getAuth();
-    setIsLoggingIn(true); // Disable the button as login starts
-    setIsModalVisible(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      const fullPhoneNumber = `+55${ddd}${telefone}`;
-      await setDoc(doc(db, "usuario", user.uid), {
-        nome: name,
-        email: email,
-        telefone: fullPhoneNumber,
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        Alert.alert('Sucesso', 'Um link de redefinição de senha foi enviado para o seu email');
+        setIsModalVisible(false); // Hide loading indicator
+      })
+      .catch((error) => {
+        // Firebase handles the case where the email is not registered
+        Alert.alert('Erro', error.message);
+        setIsModalVisible(false); // Hide loading indicator
       });
-      Alert.alert('Usuário cadastrado', 'Você foi cadastrado com sucesso!', [{ text: 'OK', onPress: () => { navigation.navigate('Login'); setIsLoggingIn(false); } }]);;
-      setIsModalVisible(false);
-    } catch (error) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      //console.log(errorMessage);
-      let customErrorMessage = "Invalid email or password"; // Default error message
-
-      // Customize the error message based on the error code
-      if (errorCode === "auth/invalid-email") {
-        customErrorMessage = "Invalid email format";
-      } else if (errorCode === "auth/wrong-password") {
-        customErrorMessage = "Incorrect password";
-      } else if (errorCode === "auth/email-already-in-use") {
-        customErrorMessage = "Usuário já cadastrado";
-      }
-      Alert.alert("Login Error", customErrorMessage, [{ text: "OK", onPress: () => setIsLoggingIn(false) }]);
-      setIsModalVisible(false);
-      try {
-        // Handle Firestore document writing errors here
-        throw new Error('Error writing document: ' + error.message);
-      } catch (error) {
-        console.error(error);
-      }
-    }
   };
-
-
-
-
+  
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
 
 
       <View style={{ flex: 1, marginHorizontal: 1 }}>
+
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <ActivityIndicator size="large" color='#48D1CC' />
+            <Text>Loading...</Text>
+          </View>
+        </View>
+      </Modal>
 
 
         <View style={{ marginBottom: 1 }}>
@@ -106,8 +74,8 @@ const Registrar = ({ navigation }) => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.registerButton}  >
-          <Text style={styles.registerButtonText}>Registrar</Text>
+        <TouchableOpacity style={styles.registerButton} onPress={handlePasswordReset} >
+          <Text style={styles.registerButtonText}>Enviar</Text>
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 30 }}>
@@ -130,6 +98,27 @@ const Registrar = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
   infoText: {
     fontSize: 16,
     color: COLORS.black,
@@ -145,7 +134,6 @@ const styles = StyleSheet.create({
     color: 'black',
 
   },
-
   inputContainer: {
     shadowColor: '#000',  // Shadow color
     shadowOffset: { width: 0, height: 2 },  // Shadow offset
@@ -191,7 +179,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Registrar;
+export default Reset;
 
 
 
